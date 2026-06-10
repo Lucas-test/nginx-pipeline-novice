@@ -1,6 +1,12 @@
-name: Build and test Nginx
+name: Niveau 2 - Engineer
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -11,14 +17,31 @@ jobs:
       - name: Récupérer le code
         uses: actions/checkout@v4
 
-      - name: Vérifier la présence des fichiers
+      - name: Vérifier la présence des fichiers essentiels
         run: |
           test -f index.html
           test -f nginx.conf
           test -f Dockerfile
+          test -f README.md
 
       - name: Construire l'image Docker
         run: docker build -t nginx-test .
 
       - name: Tester la configuration Nginx
         run: docker run --rm nginx-test nginx -t
+
+      - name: Lancer le conteneur Nginx
+        run: docker run -d --name nginx-test-container -p 8080:80 nginx-test
+
+      - name: Attendre le démarrage du service
+        run: sleep 5
+
+      - name: Tester que le service répond en HTTP
+        run: curl -f http://localhost:8080
+
+      - name: Tester l'endpoint health
+        run: curl -f http://localhost:8080/health
+
+      - name: Nettoyer le conteneur
+        if: always()
+        run: docker rm -f nginx-test-container
